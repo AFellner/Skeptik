@@ -7,6 +7,8 @@ import at.logic.skeptik.proof.sequent.lk._
 import at.logic.skeptik.proof._
 import at.logic.skeptik.proof.sequent._
 
+import scala.collection.mutable.{HashSet => MSet}
+
 import org.junit.runner.RunWith
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.runner.JUnitRunner
@@ -16,13 +18,15 @@ import at.logic.skeptik.expression.Var
 class BackwardSubsumptionSpecification extends SpecificationWithJUnit {
 //object BackwardSubsumptionSpecification {
 //  def main(args: Array[String]):Unit = {
-	val testcase = 0
+	val testcase = 1
 	
   val a = new Var("a",i)
   val b = new Var("b",i)
   val c = new Var("c",i)
   val d = new Var("d",i)
   val e = new Var("e",i)
+	val f = new Var("f",i)
+	val g = new Var("g",i)
 
 	var concseq:SequentProofNode = null
 	
@@ -31,7 +35,7 @@ class BackwardSubsumptionSpecification extends SpecificationWithJUnit {
     val sq2 = new Sequent(Seq(b,c),Seq(d))
     val sq3 = new Sequent(Seq(b,c),Seq(a))
     val sq4 = new Sequent(Seq(),Seq(a,c))
-    val sq5 = new Sequent(Seq(),Seq(a,b))
+    val sq5 = new Sequent(Seq(),Seq(a,b,e))
     val sq6 = new Sequent(Seq(a,b),Seq())
     val sq7 = new Sequent(Seq(),Seq(b))
     
@@ -72,7 +76,7 @@ class BackwardSubsumptionSpecification extends SpecificationWithJUnit {
     val r3 = R.apply(ax4,ax5) //ae
     val r4 = R.apply(r3,ax6) //e
     val r5 = R.apply(r4,ax7) //-a
-    concseq = R.apply(r2,r5)
+    concseq = r5
 	}
 	else if (testcase == 2)
 	{
@@ -119,18 +123,24 @@ class BackwardSubsumptionSpecification extends SpecificationWithJUnit {
     val r5 = R.apply(r4,ax7)
     concseq = R.apply(r2,r5)
 	}
-  val proof = Proof(concseq:SequentProofNode)
+	val sq = new Sequent(Seq(a,d),Seq())
+	val test1 = new Axiom(sq)
+	val test2 = new Axiom(sq)
+	val replaced = new MSet[SequentProofNode]
+	replaced += test1
+	println((test1.conclusion subsequentOf test2.conclusion) && (test2.conclusion subsequentOf test1.conclusion))
+	
+  val proof = new Proof(concseq:SequentProofNode)
+    def visit(node: SequentProofNode, results: Seq[Unit]):Unit = {
+      println(node.conclusion)
+    }
     
-//    def visit(node: SequentProofNode, results: Seq[Unit]):Unit = {
-//      println(node.conclusion)
-//    }
-//    
 //    proof foldDown(visit)
-//    
+    
 //    proof bottomUp(visit)
-//  println(proof)
-   val compproof = BottomUpRightLeftSubsumptionMemory(concseq)
-// println(compproof)
+  println(proof)
+   val compproof = BottomUpRightLeftSubsumptionTime(concseq)
+ println(compproof)
   
   "Backward Subsumption" should {
     "compress the proof" in {
