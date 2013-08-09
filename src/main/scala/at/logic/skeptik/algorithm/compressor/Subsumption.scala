@@ -62,6 +62,7 @@ abstract class BottomUpSubsumption extends AbstractSubsumption {
     var n929:SequentProofNode = null
     var i = 0
     var oneNewNode:SequentProofNode = null
+    var replacedChild:SequentProofNode = null
     
     
     val allreplacednodes = new MSet[SequentProofNode]
@@ -69,6 +70,10 @@ abstract class BottomUpSubsumption extends AbstractSubsumption {
      //(382,383,417,418,419,442,443,444,521,522,523,525,526,538,543,544,545,546,547,548)
     //1107
     val checkThisOut = Array[Int](1465)
+    
+    def printInfo(node: SequentProofNode) {
+       println(node.conclusion + " #" +visitNumber.getOrElse(node, "no visit#") + " " + node.hashCode())
+     }
     
     def collect(node: SequentProofNode, results: Seq[Unit]):Unit = {
       val subsumer = nodes.find( A => (A.conclusion subsequentOf node.conclusion) && (notAncestor(A,node)))
@@ -92,115 +97,47 @@ abstract class BottomUpSubsumption extends AbstractSubsumption {
     
     def replace(node: SequentProofNode, fixedPremises: Seq[SequentProofNode]):SequentProofNode = {
       counter = counter + 1
-//      if (node.premises contains n929) {
-//        println("929 is premis before")
-//      }
-//      if (counter == 928) {
-//        println("#928: " + node.conclusion)
-////        println("replace? : "+ replaceNodes.isDefinedAt(node))
-//        println("replace with: " + replaceNodes(node).conclusion)// +  " #" + visitNumber(replaceNodes(node)))
-//      }
-//      if (counter == 929)
-//      {
-//        n929 = node
-//        println("#929 "+node.conclusion)
-//        println("premises")
-//        node.premises.foreach(p => println(p.conclusion))
-//        println("fixedPremises")
-//        fixedPremises.foreach(p => println(p.conclusion))
-//      }
-//      if (counter == 930)
-//      {
-//        println("#930 " + node.conclusion)
-//        println("contains 929 as premise: " + (node.premises contains n929))
-//        println("premises")
-//        node.premises.foreach(p => println(p.conclusion))
-//        println("fixedPremises")
-//        fixedPremises.foreach(p => println(p.conclusion))
-//      }
       visitNumber += (node -> counter)
-      if (replaceNodes.isDefinedAt(node)) {
-        val replacement = replaceNodes(node)
-        //println(Proof(replacement).size + " replaces <replace> " + Proof(node).size)
-//        println(replacement.conclusion + " replaces <replace> \n" + node.conclusion)
-      }
       val newNode = fixNode(node,fixedPremises)
       for ((n1,n2) <- replaceNodes) {
         if (n2 eq node) replaceNodes(n1) = deepReplace(newNode)
       }
-//      deepReplace(newNode)
       var replaceNode:SequentProofNode = deepReplace(newNode)
-      if (!(replaceNode eq node)) replaced += node
-//      replaceNodes.get(newNode) match {
-//        case Some(u) => {
-//          if (counter == 928) n928 = u
-//          if (counter == 929) println("929 goes to replace")
-//          replaced += node
-//          replaceNode = u
-//        }
-//        case None => {
-//          if (counter == 929) println("929 goes to fix")
-//          if (counter == 928) n928 = newNode
-//          
-//          
-//          if (!(node eq newNode)) changed += newNode
-//          val replacedStillPremise = (replaced intersect node.premises.toSet)
-////          if (!(replacedStillPremise.isEmpty)) {
-////            println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-////            println("node has replaced node as premise " + node.conclusion + " ~ " + node.hashCode() + " ~ " + (replaceNodes.isDefinedAt(newNode)))
-////            println("newNode: " + newNode.conclusion)
-////            
-////            replacedStillPremise.foreach(p => println("premises visit # : " + visitNumber(p)))
-////            println("visit # of node: " + visitNumber(node))
-//////            println("premises contains replaced node: " + (!((replaced intersect node.premises.toSet).isEmpty)))
-//////            println("fixedPremises contains replaced node: " + (!((replaced intersect fixedPremises.toSet).isEmpty)))
-////            println("newNode's premises contains replaced node: " + (!((replaced intersect newNode.premises.toSet).isEmpty)))
-////          }
-////          if (replaceNodes.isDefinedAt(newNode)) {
-////            println("asdsifasdasd")
-////            replaceNodes(newNode)
-////          }
-////          else {
-//            if (counter == 929) println("929 fixed to " + newNode.conclusion)
-//            if (counter == 929) println("929 fixed to 928? " + (newNode eq n928))
-//            if (counter == 929) println(newNode.conclusion)
-//            if (counter == 929) println(n928.conclusion)
-//            replaceNode = newNode
-////          }
-//        }
-//      }
-//      if (node.premises contains n929) {
-//        println("929 in premises afterwards: " + (replaceNode.premises contains n929))
-//      }
-//      if (counter == 930) {
-//        println("930 afterwards: " + replaceNode.conclusion)
-//        println("contains 929 as premise: " + (replaceNode.premises contains n929))
-//        println("fixedPremises")
-//        replaceNode.premises.foreach(p => println(p.conclusion))
-//      }
-      if (checkThisOut contains counter){
-        print("--------------\n")
-        println(counter + " before \n" + node.conclusion + " #" +visitNumber.getOrElse(node, "no visit#")+ " " + node.hashCode())
-        //println("should be:\n"  + R(node.premises.head,node.premises.last).conclusion)
-//        println("fixed premises")
-//        fixedPremises.foreach(c => println(c.conclusion+ " #" +visitNumber.getOrElse(c, "no visit#") + c.hashCode()))
-        println("after\n"+replaceNode.conclusion + " #" + visitNumber.getOrElse(replaceNode, "no visit#") + " " + replaceNode.hashCode())
-        println("premises")
-        node.premises.foreach(c => println(c.conclusion+ " #" +visitNumber.getOrElse(c, "no visit#")+ " " + c.hashCode()))
-        println("new premises")
-        replaceNode.premises.foreach(c => println(c.conclusion+ " #" +visitNumber.getOrElse(c, "no visit#")+ " " + c.hashCode()))
-        print("--------------\n")
-      }
+      if (!(replaceNode eq node)) {replaceNodes(node) = replaceNode; replaced += node}
       if (counter == checkThisOut(0)){
         oneNewNode = replaceNode
+      }
+      if (replacedChild != null) {
+//        println("juptidu")
+        if (replacedChild eq node) {
+          println("***************************")
+          print("This is the replaced Child\n")
+          printInfo(node)
+           println("it's fixed premises")
+           (fixedPremises).foreach(c => printInfo(c))
+           println("***************************")
+        }
       }
       oldvsnew += (replaceNode -> node)
       allreplacednodes += replaceNode
       //if ((node.conclusion subsequentOf replaceNode.conclusion) && (replaceNode.conclusion subsequentOf node.conclusion)) node
       //else replaceNode
+//      if (replaceNode.conclusion.size == 1) {
+//        println("*********root found********")
+//        printInfo(replaceNode)
+//        println(counter)
+//        println("***************************")
+//      }
       replaceNode
     }
-    
+    def premiseTest(node: SequentProofNode, fixedPremises: Seq[SequentProofNode]):SequentProofNode = {
+      if (fixedPremises.size == 2) {
+        if (replaced contains fixedPremises.head) fixedPremises.last
+        else if (replaced contains fixedPremises.last) fixedPremises.head
+        else node
+      }
+      else node
+    }
     def getOutNodes(node: SequentProofNode, children: Seq[SequentProofNode]):SequentProofNode = {
       alloutnodes += node
       node
@@ -314,14 +251,63 @@ abstract class BottomUpSubsumption extends AbstractSubsumption {
      def fixAll(node: SequentProofNode, fixedPremises: Seq[SequentProofNode]):SequentProofNode = {
        fixNode(node,fixedPremises)
      }
-    val proof = setTraverseOrder(inputproof)
+     
+     var isFirstOne = true
+     var firstReplaced = true
 
+     def childOfReplaced(node: SequentProofNode, fixedPremises: Seq[SequentProofNode]):SequentProofNode = {
+       if (!(replaced intersect fixedPremises.toSet).isEmpty && firstReplaced) {
+         print("This node has a replaced child\n")
+         printInfo(node)
+         println("replaced premises")
+         (replaced intersect fixedPremises.toSet).foreach(c => {
+           printInfo(c)
+           replacedChild = c
+         })
+         firstReplaced = false
+         
+       }
+       node
+     }
+     
+     def childOfNotVisited(node: SequentProofNode, fixedPremises: Seq[SequentProofNode]):SequentProofNode = {
+       val badpremises = if (visitNumber.isDefinedAt(node)) fixedPremises.filter(p => !(visitNumber.isDefinedAt(p))) else MSet()
+       if (!(badpremises).isEmpty && isFirstOne) {
+           print("This node non visited child\n")
+           printInfo(node)
+           println("non visited child")
+           (badpremises).foreach(c => printInfo(c))
+           println("all childs")
+           (node.premises).foreach(c => printInfo(c))
+           isFirstOne = false
+           
+       }
+       node
+     }
+     
+     def emptyNode(node: SequentProofNode, fixedPremises: Seq[SequentProofNode]):SequentProofNode = {
+       if (node.conclusion.size == 1) {
+         print("root\n")
+         printInfo(node)
+       }
+       node
+     }
+     
+     
+    val proof = setTraverseOrder(inputproof)
+    print("\n")
     proof bottomUp collect
 //    Proof(proof foldDown { ((node: SequentProofNode, fixedPremises: Seq[SequentProofNode]) => {
 //      if (replaceNodes.isDefinedAt(node)) println("bla")
 //      replaceNodes.getOrElse(node,fixNode(node,fixedPremises))
 //    })})
+//    println("\nat first: " + replaceNodes.size)
+//    val out1 = Proof(proof foldDown replace)
+//    println(proof.size)
+//    println(replaced.size)
+//    println("then " + replaceNodes.size)
     val out = Proof(proof foldDown replace)
+//    println("then " + replaceNodes.size)
 //    val out2 = Proof(out foldDown replace)
 //    val out3 = Proof(out2 foldDown replace)
     
@@ -329,13 +315,21 @@ abstract class BottomUpSubsumption extends AbstractSubsumption {
     
 //    val out2 = Proof(out foldDown fixAll)
 //    println("---")
+    out bottomUp childOfNotVisited
+    out bottomUp emptyNode
+//    print("root\n")
+//    println(out.root.conclusion + " #" +visitNumber.getOrElse(out.root, "no visit#")+ " " + out.root.hashCode())
+//    println("root premises")
+//    (out.root.premises).foreach(c => println(c.conclusion+ " #" +visitNumber.getOrElse(c, "no visit#")+ " " + c.hashCode()))
+    out foldDown childOfReplaced
+    val out1 = Proof(proof foldDown premiseTest)
 //      out foldDown checkReplaced
 //      out bottomUp checkVisit2
-      out foldDown checkOutPremises
-      out bottomUp checkOutChildren
-      out bottomUp checkOutInterestingChild
-      println("premises")
-      interestingChild.premises.foreach(c => println(c.conclusion+ " #" +visitNumber.getOrElse(c, "no visit#")+ " " + c.hashCode()))
+//      out foldDown checkOutPremises
+//      out bottomUp checkOutChildren
+//      out bottomUp checkOutInterestingChild
+//      println("premises")
+//      interestingChild.premises.foreach(c => println(c.conclusion+ " #" +visitNumber.getOrElse(c, "no visit#")+ " " + c.hashCode()))
 //      out bottomUp soundCheck
 //      println("but it happens " + i + " times")
 //      println((proof.root.hashCode()) == out.root.hashCode())
@@ -347,7 +341,7 @@ abstract class BottomUpSubsumption extends AbstractSubsumption {
 //      for (i <- 0 to alloutnodes.size-1) {
 //        if (alloutnodes)
 //      }
-    out
+    out1
   }
 }
 
