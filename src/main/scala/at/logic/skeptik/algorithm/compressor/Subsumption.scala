@@ -91,21 +91,29 @@ abstract class BottomUpSubsumption extends AbstractSubsumption {
       while(replaceNodes.isDefinedAt(outNode)) {
         outNode = replaceNodes(outNode)
       }
-      
       outNode
     }
     
     def replace(node: SequentProofNode, fixedPremises: Seq[SequentProofNode]):SequentProofNode = {
       counter = counter + 1
       visitNumber += (node -> counter)
-      val newNode = fixNode(node,fixedPremises)
+      val newNode = fixNode(node,fixedPremises.map(f => deepReplace(f)))
       for ((n1,n2) <- replaceNodes) {
         if (n2 eq node) replaceNodes(n1) = deepReplace(newNode)
       }
       var replaceNode:SequentProofNode = deepReplace(newNode)
+      replaceNode = fixNode(replaceNode,replaceNode.premises)
       if (!(replaceNode eq node)) {replaceNodes(node) = replaceNode; replaced += node}
       if (counter == checkThisOut(0)){
         oneNewNode = replaceNode
+         print("OLD\n")
+         printInfo(node)
+         println("NEW")
+         printInfo(replaceNode)
+         println("NEW premises")
+         (replaceNode.premises).foreach(c => printInfo(c))
+         println("OLD premises")
+         (node.premises).foreach(c => printInfo(c))
       }
       if (replacedChild != null) {
 //        println("juptidu")
@@ -255,17 +263,27 @@ abstract class BottomUpSubsumption extends AbstractSubsumption {
      var isFirstOne = true
      var firstReplaced = true
 
-     def childOfReplaced(node: SequentProofNode, fixedPremises: Seq[SequentProofNode]):SequentProofNode = {
-       if (!(replaced intersect fixedPremises.toSet).isEmpty && firstReplaced) {
+     def childOfReplaced(node: SequentProofNode, children: Seq[SequentProofNode]):SequentProofNode = {
+       if (!((replaced intersect children.toSet).isEmpty) && firstReplaced) {
          print("This node has a replaced child\n")
          printInfo(node)
-         println("replaced premises")
-         (replaced intersect fixedPremises.toSet).foreach(c => {
+         println("replaced children")
+         (replaced intersect children.toSet).foreach(c => {
            printInfo(c)
            replacedChild = c
          })
          firstReplaced = false
          
+       }
+       node
+     }
+     
+     def premiseRepl(node: SequentProofNode, fixedPremises: Seq[SequentProofNode]):SequentProofNode = {
+       if (!((replaced intersect fixedPremises.toSet).isEmpty) && (replaced contains node)) {
+         print("This node is not replaced while one of its premises is\n")
+         printInfo(node)
+         println("replaced premises")
+         (replaced intersect fixedPremises.toSet).foreach(c =>  printInfo(c))
        }
        node
      }
@@ -308,24 +326,25 @@ abstract class BottomUpSubsumption extends AbstractSubsumption {
 //    println("then " + replaceNodes.size)
     val out = Proof(proof foldDown replace)
 //    println("then " + replaceNodes.size)
-//    val out2 = Proof(out foldDown replace)
+    val out2 = Proof(proof foldDown replace)
 //    val out3 = Proof(out2 foldDown replace)
     
 //    println((changed.map(n => n.conclusion) intersect replaced.map(n => n.conclusion)).isEmpty)
     
 //    val out2 = Proof(out foldDown fixAll)
 //    println("---")
-    out bottomUp childOfNotVisited
-    out bottomUp emptyNode
+//    out bottomUp childOfNotVisited
+//    out bottomUp emptyNode
 //    print("root\n")
 //    println(out.root.conclusion + " #" +visitNumber.getOrElse(out.root, "no visit#")+ " " + out.root.hashCode())
 //    println("root premises")
 //    (out.root.premises).foreach(c => println(c.conclusion+ " #" +visitNumber.getOrElse(c, "no visit#")+ " " + c.hashCode()))
-    out foldDown childOfReplaced
-    val out1 = Proof(proof foldDown premiseTest)
+//    out bottomUp childOfReplaced
+//    val out1 = Proof(proof foldDown premiseTest)
 //      out foldDown checkReplaced
 //      out bottomUp checkVisit2
 //      out foldDown checkOutPremises
+//      out foldDown premiseRepl
 //      out bottomUp checkOutChildren
 //      out bottomUp checkOutInterestingChild
 //      println("premises")
@@ -341,7 +360,7 @@ abstract class BottomUpSubsumption extends AbstractSubsumption {
 //      for (i <- 0 to alloutnodes.size-1) {
 //        if (alloutnodes)
 //      }
-    out1
+    out2
   }
 }
 
