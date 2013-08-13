@@ -14,11 +14,11 @@ import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.runner.JUnitRunner
 import at.logic.skeptik.expression.Var
 
-@RunWith(classOf[JUnitRunner])
-class BackwardSubsumptionSpecification extends SpecificationWithJUnit {
-//object BackwardSubsumptionSpecification {
-//  def main(args: Array[String]):Unit = {
-	val testcase = 1
+//@RunWith(classOf[JUnitRunner])
+//class BackwardSubsumptionSpecification extends SpecificationWithJUnit {
+object BackwardSubsumption {
+  def main(args: Array[String]):Unit = {
+	val testcase = 3
 	
   val a = new Var("a",i)
   val b = new Var("b",i)
@@ -99,7 +99,7 @@ class BackwardSubsumptionSpecification extends SpecificationWithJUnit {
     val r3 = R.apply(r1,r2) //a
     concseq = R.apply(r3,ax6)
 	}
-	else {
+	else if (testcase == 3) {
 	  val sq1 = new Sequent(Seq(b,c),Seq(a))
     val sq2 = new Sequent(Seq(),Seq(c))
 	  val sq3 = new Sequent(Seq(),Seq(b))
@@ -123,31 +123,84 @@ class BackwardSubsumptionSpecification extends SpecificationWithJUnit {
     val r5 = R.apply(r4,ax7)
     concseq = R.apply(r2,r5)
 	}
-	val sq = new Sequent(Seq(a,d),Seq())
-	val test1 = new Axiom(sq)
-	val test2 = new Axiom(sq)
-	val replaced = new MSet[SequentProofNode]
-	replaced += test1
-	println((test1.conclusion subsequentOf test2.conclusion) && (test2.conclusion subsequentOf test1.conclusion))
-	
+	else if (testcase == 4) {
+    val sq1 = new Sequent(Seq(a,b,c),Seq())
+    val sq2 = new Sequent(Seq(),Seq(c))
+    val sq3 = new Sequent(Seq(e),Seq(a))
+    val sq4 = new Sequent(Seq(a,b),Seq())
+    val sq5 = new Sequent(Seq(),Seq(b))
+    val sq6 = new Sequent(Seq(),Seq(a,b))
+    val sq7 = new Sequent(Seq(a,b,c,d),Seq())
+    val sq8 = new Sequent(Seq(),Seq(c))
+    val sq9 = new Sequent(Seq(),Seq(d,e))
+    val sq10 = new Sequent(Seq(),Seq(a))
+    
+    val ax1 = new Axiom(sq1)
+    val ax2 = new Axiom(sq2)
+    val ax3 = new Axiom(sq3)
+    val ax4 = new Axiom(sq4)
+    val ax5 = new Axiom(sq5)
+    val ax6 = new Axiom(sq6)
+    val ax7 = new Axiom(sq7)
+    val ax8 = new Axiom(sq8)
+    val ax9 = new Axiom(sq9)
+    val ax10 = new Axiom(sq10)
+  
+    val r1 = R.apply(ax1, ax2) //ab
+    val r2 = R.apply(r1,ax3) //be
+    
+    val r3 = R.apply(ax4,ax5) //a
+    val r4 = R.apply(r3,ax6) //-b
+    
+    val r5 = R.apply(ax7,ax8) //abd
+    val r6 = R(r5,ax9) //a,b,-e
+    val r7 = R(r6,ax10) //b,-e
+    
+    val r8 = R(r2,r4) //e
+    val r9 = R(r7,r4) //-e
+//    println(r8.conclusion)
+//    println(r9.conclusion)
+    concseq = R.apply(r8,r9)
+  }
+	else if (testcase == 5) {
+	  val n2 = new Axiom(new Sequent(Seq(),Seq(a,b)))
+    val ax2 = new Axiom(new Sequent(Seq(),Seq(e)))
+    val ax3 = new Axiom(new Sequent(Seq(b,e),Seq()))
+    val ax4 = new Axiom(new Sequent(Seq(e,a),Seq()))
+	  
+	  val r1 = R(ax2,ax3) //b
+	  val p = R(n2,r1) //-a
+	  val n1 = R(ax2,ax4) //a
+	  concseq = R(p,n1)
+	}
+	else if (testcase == 6) {
+	  
+	}
+//	val sq = new Sequent(Seq(a,d),Seq())
+//	val test1 = new Axiom(sq)
+//	val test2 = new Axiom(sq)
+//	val replaced = new MSet[SequentProofNode]
+//	replaced += test1
+//	println((test1.conclusion subsequentOf test2.conclusion) && (test2.conclusion subsequentOf test1.conclusion))
+//	
   val proof = new Proof(concseq:SequentProofNode)
     def visit(node: SequentProofNode, results: Seq[Unit]):Unit = {
-      println(node.conclusion)
+      println(node)
     }
     
-//    proof foldDown(visit)
+    proof foldDown(visit)
     
 //    proof bottomUp(visit)
-  println(proof)
+//  println(proof)
    val compproof = BottomUpRightLeftSubsumptionTime(concseq)
- println(compproof)
+ (compproof foldDown(visit))
   
-  "Backward Subsumption" should {
-    "compress the proof" in {
-      proof.size must beGreaterThan(compproof.size)
-    }
-    "conclude the empty clause" in {
-      compproof.root.conclusion.isEmpty must beTrue
-    }
+//  "Backward Subsumption" should {
+//    "compress the proof" in {
+//      proof.size must beGreaterThan(compproof.size)
+//    }
+//    "conclude the empty clause" in {
+//      compproof.root.conclusion.isEmpty must beTrue
+//    }
 	}
 }

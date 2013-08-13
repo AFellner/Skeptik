@@ -49,6 +49,62 @@ extends Iterable[P]
     iterate(nodes.length - 1)
     resultFrom(nodes(0))
   }
+  
+
+  def foldDown3[X](f: (P, Seq[X]) => X)(nextNode: Next[X]): X = {
+    val resultFrom = MMap[P,X]()
+    @tailrec def iterate(pos:Int):Unit = {
+      println(nextNode.hashCode())
+      if (pos < 0) return
+      val node = nodes(pos)
+      resultFrom(node) = f(node, node.premises.map(resultFrom)) // TODO: remove "toList"
+      nextNode.next match {
+        case None => iterate(pos-1)
+        case Some(nn) => iterate(
+            if (nodes contains nn) {
+//              println("go somewhere else")
+              nodes.indexOf(nn)
+            }
+            else {
+//              println("index not defined")
+              pos-1
+            }
+            )
+      }
+    }
+    iterate(nodes.length - 1)
+    resultFrom(nodes(0))
+  }
+  
+  type N = at.logic.skeptik.proof.sequent.SequentProofNode
+  def foldDown2(f: (N, Seq[N]) => N)(badNodes: collection.mutable.HashSet[N]): N = {
+    val resultFrom = MMap[N,N]()
+    @tailrec def iterate(pos:Int):Unit = {
+      if (pos < 0) return
+      val node: N = nodes(pos).asInstanceOf[N]
+      val nNode = f(node, node.premises.map(resultFrom))
+      if (badNodes contains nNode) println("! shouldn't happen") // and is not happening
+      for (p <- nNode.premises if badNodes contains p) println("! shouldn't happen") //and is not happening
+      if (nNode.existsAmongAncestors(n => badNodes.contains(n))) {
+        println("!! shouldn't happen") // and it is happening!
+        println(nNode.hashCode())
+        println(nNode.conclusion)
+        for (b <- badNodes if nNode.existsAmongAncestors(n => n eq b)) println("This bad node occurs among ancestors: " + b.hashCode())
+      }
+      resultFrom(node) = nNode
+      iterate(pos-1)
+    }
+    iterate(nodes.length - 1)
+    println(nodes(0).asInstanceOf[N].hashCode())
+    val r = resultFrom(nodes(0).asInstanceOf[N])
+    if (r.existsAmongAncestors(n => badNodes.contains(n))) {
+      println("Root: shouldn't happen") // and it is happening!
+      println(r.hashCode())
+      println(r.conclusion) 
+    }
+    if (r.conclusion.isEmpty) println("empty: " + r.hashCode())
+    r
+  }
 
   def bottomUp[X](f:(P, Seq[X])=>X):Unit = {
     val resultsFromChildren = MMap[P, Seq[X]]()
@@ -68,12 +124,15 @@ extends Iterable[P]
     foldDown { (n:P, r:Seq[Int]) =>
       counter += 1
       result += counter.toString + ": {" + n.conclusion + "} \t: " +
-                n.name + "(" + r.mkString(", ") + ")[" + n.parameters.mkString(", ") + "]\n"
+                n.name + "(" + r.mkString(", ") + ")[" + n.parameters.mkString(", ") + "]" + " ~ " + n.hashCode() + "\n"
       counter
     }
     result
   }
-  
+}
+
+class Next[X]() {
+  var next:Option[X] = None
 }
 
 object Proof {

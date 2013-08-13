@@ -38,6 +38,8 @@ package object compressor {
     "TDLRS" -> TopDownLeftRightSubsumption,
     "BURLSt" -> BottomUpRightLeftSubsumptionTime,
     "BURLSm" -> BottomUpRightLeftSubsumptionMemory,
+    "BULRSt" -> BottomUpLeftRightSubsumptionTime,
+    "BULRSm" -> BottomUpLeftRightSubsumptionMemory,
     "LRAS" -> LeftRightAxiomSubsumption,
     "RLAS" -> RightLeftAxiomSubsumption
   )
