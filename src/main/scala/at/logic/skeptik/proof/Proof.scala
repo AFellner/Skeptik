@@ -50,29 +50,29 @@ extends Iterable[P]
     resultFrom(nodes(0))
   }
   
-
-  def foldDown3[X](f: (P, Seq[X]) => X)(nextNode: Next[X]): X = {
+  
+  def foldDown3[X](f: (P, Seq[X]) => X)(nextNode: Next[P]): X = {
     val resultFrom = MMap[P,X]()
-    @tailrec def iterate(pos:Int):Unit = {
-      println(nextNode.hashCode())
-      if (pos < 0) return
-      val node = nodes(pos)
-      resultFrom(node) = f(node, node.premises.map(resultFrom)) // TODO: remove "toList"
-      nextNode.next match {
-        case None => iterate(pos-1)
-        case Some(nn) => iterate(
-            if (nodes contains nn) {
-//              println("go somewhere else")
-              nodes.indexOf(nn)
-            }
-            else {
-//              println("index not defined")
-              pos-1
-            }
-            )
+//    var lastRoot = nodes(0)
+//    var next = false
+    val visited = MSet[P]()
+    val skipNode = MSet[P]()
+    @tailrec def iterate(node:P):Unit = {
+      visited += node
+//      println(nextNode.hashCode())
+      if (!(skipNode contains node)) resultFrom(node) = f(node, node.premises.map(resultFrom)) // TODO: remove "toList"
+//      if (node.conclusion.logicalSize == 0) lastRoot = node
+      if (nodes.indexOf(node) <= 0)  return
+      nextNode.n match {
+        case None => iterate(nodes(nodes.indexOf(node)-1))
+        case Some((from,to)) => {
+          skipNode += from
+          iterate(to)
+        }
       }
     }
-    iterate(nodes.length - 1)
+    iterate(nodes.last)
+    if (!(visited contains nodes(0))) println("root has not yet been visited")
     resultFrom(nodes(0))
   }
   
@@ -132,7 +132,8 @@ extends Iterable[P]
 }
 
 class Next[X]() {
-  var next:Option[X] = None
+  var n:Option[(X,X)] = None
+//  var from:Option[X] = None
 }
 
 object Proof {

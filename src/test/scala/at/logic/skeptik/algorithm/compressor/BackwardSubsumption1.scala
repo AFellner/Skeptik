@@ -74,7 +74,7 @@ object BackwardSubsumption1 {
     
     firstNode = n7
   }
-    else if (testcase == 2) {
+  else if (testcase == 2) {
     val n1 = new Axiom(new Sequent(Seq(),Seq(a,b)))
     val n2 = new Axiom(new Sequent(Seq(),Seq(c,b)))
     val n3 = new Axiom(new Sequent(Seq(),Seq(a,d)))
@@ -138,10 +138,10 @@ object BackwardSubsumption1 {
       if (storeNodes) nodes += node
       count = count +1
       if (count == 2) {
-        y.next = Some(concseq)
+//        y.n = Some(concseq)
       }
       else {
-        y.next = None
+        y.n = None
       }
       node
     }
@@ -170,15 +170,15 @@ object BackwardSubsumption1 {
   }
 //    println(proof)
 //    println(concseq)
-  proof.foldDown3(visit)(y)
+//  proof.foldDown3(visit)(y)
 //    proof foldDown (visit)
 //    print(printProof(proof))
 //    println()
 //    proof bottomUp(visit)
-//  println(proof)
-//   val compproof = BottomUpLeftRightSubsumptionTime(concseq)
+  println(proof)
+   val compproof = BottomUpLeftRightSubsumptionMemory(concseq)
 //   print(printProof(compproof))
-//   println(compproof)
+   println(compproof)
  
 //   compproof foldDown notOriginal
   
