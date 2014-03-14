@@ -5,7 +5,7 @@ import collection.mutable.{HashMap => MMap}
 import java.io.FileReader
 import at.logic.skeptik.proof.Proof
 import at.logic.skeptik.proof.sequent.{SequentProofNode => Node}
-import at.logic.skeptik.proof.sequent.lk.{R, Axiom, UncheckedInference}
+import at.logic.skeptik.proof.sequent.lk.{R, Axiom, UncheckedInference, EqualityInference}
 import at.logic.skeptik.expression.formula._
 import at.logic.skeptik.expression._
 import at.logic.skeptik.judgment.immutable.{SeqSequent => Sequent}
@@ -16,33 +16,50 @@ trait VeriTParsers
 extends JavaTokenParsers with RegexParsers {
   
   private var proofMap = new MMap[Int,Node]
+//  private val proofArray = new ArrayBuffer[Node]()
   private var exprMap = new MMap[Int,E]
   private var bindMap = new MMap[String,E]
 
   def proof: Parser[Proof[Node]] = rep(line) ^^ { list => 
     val p = Proof(list.last)
     proofMap = new MMap[Int,Node]
+//    proofArray.clear
     exprMap = new MMap[Int,E]
     p
   }
   def line: Parser[Node] = "(set"  ~> proofName ~ "(" ~ inference <~ "))" ^^ {
-    case ~(~(n, _), p) => proofMap += (n -> p); p
+    case ~(~(n, _), p) => {
+      println(n)
+      proofMap += (n -> p); p
+//      println(n)
+//      proofArray += p
+//      p
+    }
     case wl => throw new Exception("Wrong line " + wl)
   }
 
-  def inference: Parser[Node] = (resolution | axiom | unchecked)
+  def inference: Parser[Node] = (resolution | axiom | theory)
   def resolution: Parser[Node] = "resolution" ~> premises <~ conclusion ^^ {
     list => (list.head /: list.tail) { ((left, right) => R(left, right)) }
   }
   def axiom: Parser[Node] = "input" ~> conclusion ^^ {
     list => new Axiom(list)
   }
+  def theory:Parser[Node] = (euf | unchecked)
+  
+//  def euf: Parser[Node] = (reflexive | transitive | congruent | congruent_pred)
+  
+  def euf: Parser[Node] = ("eq_reflexive" | "eq_transitive" | "eq_congruent" | "eq_congruent_pred") ~> conclusion ^^ {
+    list => new EqualityInference(list)
+  }
+  
   def unchecked: Parser[Node] = name ~ opt(premises) ~ conclusion ^^ {
     case ~(~(name, None), list) => new UncheckedInference(name,Seq(),list)
     case ~(~(name, Some(premises)), list) => new UncheckedInference(name,premises,list)
   }
 
   def premises: Parser[List[Node]] = ":clauses (" ~> rep(proofName) <~ ")" ^^ {
+//    list => list map {pn => proofArray(pn - 1)}
     list => list map proofMap
   }
   def conclusion: Parser[List[E]] = ":conclusion (" ~> rep(expression) <~ ")"
@@ -51,7 +68,10 @@ extends JavaTokenParsers with RegexParsers {
   
   def expression: Parser[E] = (assignment | namedExpr | expr)
   def assignment: Parser[E] = exprName ~ ":" ~ expr ^^ {
-    case ~(~(n,_),e) => exprMap += (n -> e); e
+    case ~(~(n,_),e) => {
+//      println(n)
+      exprMap += (n -> e); e
+    }
   }
 
   def exprName: Parser[Int] = "#" ~> """\d+""".r ^^ { _.toInt }

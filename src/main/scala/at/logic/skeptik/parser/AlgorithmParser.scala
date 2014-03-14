@@ -7,12 +7,43 @@ import at.logic.skeptik.proof.Proof
 import at.logic.skeptik.proof.sequent.{SequentProofNode => N}
 import at.logic.skeptik.judgment.Judgment
 import at.logic.skeptik.algorithm.compressor.algorithms
+import at.logic.skeptik.algorithm.compressor.paramAlgorithms
+
+//class param {
+//  val value: T
+//}
 
 object AlgorithmParser extends RegexParsers {
   type P = Proof[N]
   type A = P => P
   
   def algo : Parser[A] = (atomicAlgo | composedAlgo)
+  
+//  def alg2: Parser[A] = paramAlgo ~ ("("~param~")").*
+//  
+//  def paramAlgo: Parser[A] = """[a-zA-Z0-9]+""".r ~ params ^^ {//("(" ~ (number <~ ",").* ~ ")").* ^^ {
+//    case ~(name, params) => {
+//      paramAlgorithms.get(name) match {
+//        case Some(a) => 
+//          if (a.param == params.size) {
+//            success(a(params))
+//          }
+//        case None => failure("There is no algorithm with name + '" + name + "'")
+//      }
+//    }
+//  }
+//  
+//  def paramType: Parser[Type]
+//  
+//  def params: Parser[Seq[Any]] = ("(" ~ (number ~ ": " ~ paramType <~ ",").* ~ ")").* ^^ {
+//    
+//  }
+  
+  def number: Parser[Double] = """\d+(\.\d*)?""".r ^^ { _.toDouble }
+  
+//  def param: Parser[Double] = p match {
+//    
+//  }
   
   def atomicAlgo : Parser[A] = """[a-zA-Z0-9]+""".r flatMap { name => 
     algorithms.get(name) match {
