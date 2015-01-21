@@ -59,13 +59,14 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
         val fixedNode = fixNode(node,fromPr.map(_._1))
         var theorylemma = fromPr.map(_._2).forall(b => b)
         
-        val rightEqs = fixedNode.conclusion.suc.filter(EqW.isEq(_)).map(EqW(_))
-        val leftEqs = fixedNode.conclusion.ant.filter(EqW.isEq(_)).map(EqW(_))
-
         //A more selective criteria here should speed up the algorithm, 
         //possibly at the cost of less compression
 //        val resNode = if (lowTheoryLemma.contains(node)) {
-        val resNode = if (true) {
+//        val resNode = if (true) {
+        val resNode = if ((node.isInstanceOf[TheoryR] || node.isInstanceOf[TheoryAxiom]) && hasNonEqChild(node,proof)) {
+//          println("Actually trying!: " + node.getClass)
+          val rightEqs = fixedNode.conclusion.suc.filter(EqW.isEq(_)).map(EqW(_))
+          val leftEqs = fixedNode.conclusion.ant.filter(EqW.isEq(_)).map(EqW(_))
 //          println("bla1")
           val con = newCon.addAll(leftEqs)
           val eqToMap = rightEqs.map(eq => {
@@ -76,13 +77,13 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
                   case Some(proof) => {
                     val newSize = proof.root.conclusion.ant.size
                     val oldSize = leftEqs.size
-                    val line = oldSize + ", " + newSize + ", " + theorylemma + "\n"
+//                    val line = oldSize + ", " + newSize + ", " + theorylemma + "\n"
 //                    output.write(line)
 //                    if (proof.size > 1) println("Proof is bigger than 1")
-//                    println("bla")
                     if (newSize < oldSize || (newSize == oldSize && proof.size < Proof(fixedNode).size)) {
-//                      new Axiom(proof.root.conclusion)
-                      proof.root
+//                      println("found a smaller one!")
+                      TheoryLemma(proof.root.conclusion)
+//                      proof.root
                     }
                     else fixedNode
                   }
@@ -117,11 +118,13 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
     })
 //    val resProof2 = newProof
 //    if (!resProof2.conclusion.isEmpty) println("Non empty proof")
-    println("proof: " + newProof)
+//    println("proof: " + newProof)
     //DAGify is necessary to gain reasonable compression, due to recreation of some axioms in subproof production
     DAGify(resProof2)
   }
   
-  
+  def hasNonEqChild(node: N, proof: Proof[N]): Boolean = {
+    proof.childrenOf(node).exists {c => !c.isInstanceOf[TheoryAxiom] && !c.isInstanceOf[TheoryR]}
+  }
   
 }

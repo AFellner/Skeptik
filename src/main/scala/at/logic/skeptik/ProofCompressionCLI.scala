@@ -28,6 +28,7 @@ object ProofCompressionCLI {
     ".smt2"  -> ProofParserVeriT,
     ".smtb"  -> ProofParserVeriT,
     ".smtbc"  -> ProofParserVeriT,
+    ".smt2_proof"  -> ProofParserVeriT,
     ".skeptik"  -> ProofParserSkeptik,
     ".s" -> ProofParserSkeptik,
     ".tc" -> ProofParserTraceCheck,
