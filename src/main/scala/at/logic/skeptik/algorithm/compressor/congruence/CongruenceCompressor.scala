@@ -26,7 +26,6 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
   def newCon(implicit eqReferences: MMap[(E,E),EqW]): AbstractCongruence
   
   def apply(proof: Proof[N]) = {
-
     implicit val eqReferences = MMap[(E,E),EqW]()
     implicit val reflMap = MMap[E,N]()
     
@@ -67,21 +66,24 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
         //possibly at the cost of less compression
 //        val resNode = if (lowTheoryLemma.contains(node)) {
         val resNode = if (true) {
+//          println("bla1")
           val con = newCon.addAll(leftEqs)
           val eqToMap = rightEqs.map(eq => {
             val con2 = con.addNode(eq.l).addNode(eq.r).updateLazy
             con2.explain(eq.l,eq.r) match {
               case Some(path) => {
-                
-                
-                
                 path.toProof match {
                   case Some(proof) => {
                     val newSize = proof.root.conclusion.ant.size
                     val oldSize = leftEqs.size
                     val line = oldSize + ", " + newSize + ", " + theorylemma + "\n"
 //                    output.write(line)
-                    if (newSize < oldSize || (newSize == oldSize && proof.size < Proof(fixedNode).size)) proof.root
+//                    if (proof.size > 1) println("Proof is bigger than 1")
+//                    println("bla")
+                    if (newSize < oldSize || (newSize == oldSize && proof.size < Proof(fixedNode).size)) {
+//                      new Axiom(proof.root.conclusion)
+                      proof.root
+                    }
                     else fixedNode
                   }
                   case None => fixedNode
@@ -113,6 +115,9 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
         case None => A
       }
     })
+//    val resProof2 = newProof
+//    if (!resProof2.conclusion.isEmpty) println("Non empty proof")
+    println("proof: " + newProof)
     //DAGify is necessary to gain reasonable compression, due to recreation of some axioms in subproof production
     DAGify(resProof2)
   }

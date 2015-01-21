@@ -103,8 +103,6 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
       val res = deduced.foldLeft(transNode.asInstanceOf[N])({(A,B) => 
         R(A,B)
       })
-      if (res.conclusion.ant.exists(_.toString == "((f2 c_5 c_5) = (f2 c_4 c_4))")) println("creating it while making proof for " + this + "\n"+Proof(res))
-      if (res.conclusion.suc.size > 1) println("size > 1 in toProof!:\n " + Proof(res))
       Some(res)
     }
     else if (deduced.size == 1) { //Case 2
@@ -132,7 +130,6 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
    *             collected as a tuple of a SequentProofNode (N) and the equality if proves (as an EqW object)
    */
   def buildTransChain(implicit eqReferences: MMap[(E,E),EqW], reflMap: MMap[E,N]): (E,E,Seq[EqW],Seq[N]) = {
-    if (v.toString == "(c_2 = c_3)") println(v + " occurs in trans. chain")
     pred match {
       case Some(pr) => {
         val predEq = pr.label.equation
