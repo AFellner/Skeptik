@@ -10,10 +10,9 @@ import at.logic.skeptik.proof.sequent.{SequentProofNode => Node}
 import at.logic.skeptik.proof.sequent.lk.{R, Axiom, UncheckedInference}
 import at.logic.skeptik.expression._
 import at.logic.skeptik.expression.formula._
-//import scala.collection.mutable.ArrayBuffer
 
 /**
- * The syntax of a trace is as follows:
+ * The grammar for traces is:
  *    
  * <trace>       = { <clause> }
  * <clause>      = <pos> <literals> <antecedents>
@@ -23,28 +22,36 @@ import at.logic.skeptik.expression.formula._
  * <pos>         =  "1" |  "2" | .... | <max-idx>
  * <neg>         = "-"<pos>
  * 
+ * 
  */
 
 object ProofParserTraceCheck extends ProofCombinatorParser[Node] with TraceCheckParsers
 
 trait TraceCheckParsers
-extends JavaTokenParsers with RegexParsers {
+extends BasicTraceCheckParsers {
   
-  private val proofMap = new MMap[Int,Node]
-  private val varMap = new MMap[Int,E]
-  private val clauseNumbers = new MMap[Int,(List[E],List[Int])]
-  val nodeMap = MMap[Sequent,Node]()
-  val processedMap = MMap[List[Int],Node]();
+  private var proofMap = new MMap[Int,Node]
+  private var clauseNumbers = new MMap[Int,(List[E],List[Int])]
+  var nodeMap = MMap[Sequent,Node]()
+  var processedMap = MMap[List[Int],Node]();
   var maxClause = 0
 
+  def reset() = {
+    proofMap = new MMap[Int,Node]
+    varMap = new MMap[Int,E]
+    clauseNumbers = new MMap[Int,(List[E],List[Int])]
+    nodeMap = MMap[Sequent,Node]()
+    processedMap = MMap[List[Int],Node]();
+    maxClause = 0
+  }
+  
+  
   def proof: Parser[Proof[Node]] = rep(clause) ^^ { list => 
     Proof(getNode(list.last))
   }
   
   def clause: Parser[Int] = pos ~ literals ~ antecedents ^^ {
     case ~(~(p, l), a) => {
-        println("" + p + l.mkString(" ", " ", " 0") + a.mkString(" ", " ", " 0"))
-      
         if (l.isEmpty && a.isEmpty) throw new Exception("Invalid input at " + p + " ~ " + l)
         else {
           clauseNumbers += (p -> (l,a))
@@ -56,10 +63,6 @@ extends JavaTokenParsers with RegexParsers {
       }
     case wl => throw new Exception("Wrong line " + wl)
   }
-  
-  // ToDo: There is a bug somewhere in the method below. 
-  // It is transforming DAGs into trees.
-  
   
   /**
    * Resolves the clauses represented by a list of indices in the correct order.
@@ -149,6 +152,12 @@ extends JavaTokenParsers with RegexParsers {
       processedMap.getOrElseUpdate(tuple._2,resolveClauses(tuple._2))
     }
   }
+}
+  
+trait BasicTraceCheckParsers
+extends JavaTokenParsers with RegexParsers {
+ 
+  var varMap = new MMap[Int,E]
   
   def pos: Parser[Int] = """[1-9][0-9]*""".r ^^ { _.toInt }
   

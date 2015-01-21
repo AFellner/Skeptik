@@ -41,7 +41,7 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
     // TheoryLemma classification traversal for stricter node selection criteria
     
     def classifyNodes(node: N, fromPr: Seq[(N,Boolean)]): (N,Boolean) = {
-      if (fromPr.isEmpty) (node,node.isInstanceOf[EqAxiom])
+      if (fromPr.isEmpty) (node,node.isInstanceOf[TheoryAxiom])
       else {
         var theorylemma = fromPr.map(_._2).forall(b => b)
         if (!theorylemma) {
@@ -54,7 +54,7 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
     // main traversal
     
     def traversal(node: N, fromPr: Seq[(N,Boolean)]): (N,Boolean) = {
-      if (fromPr.isEmpty) (node,node.isInstanceOf[EqAxiom])
+      if (fromPr.isEmpty) (node,node.isInstanceOf[TheoryAxiom])
       else {
         val fixedNode = fixNode(node,fromPr.map(_._1))
         var theorylemma = fromPr.map(_._2).forall(b => b)
