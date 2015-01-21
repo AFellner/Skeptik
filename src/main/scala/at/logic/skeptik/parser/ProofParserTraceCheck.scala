@@ -25,7 +25,7 @@ import at.logic.skeptik.expression.formula._
  * 
  */
 
-object ProofParserTraceCheck extends ProofParser[Node] with TraceCheckParsers
+object ProofParserTraceCheck extends ProofCombinatorParser[Node] with TraceCheckParsers
 
 trait TraceCheckParsers
 extends JavaTokenParsers with RegexParsers {
@@ -43,6 +43,8 @@ extends JavaTokenParsers with RegexParsers {
   
   def clause: Parser[Int] = pos ~ literals ~ antecedents ^^ {
     case ~(~(p, l), a) => {
+        println("" + p + l.mkString(" ", " ", " 0") + a.mkString(" ", " ", " 0"))
+      
         if (l.isEmpty && a.isEmpty) throw new Exception("Invalid input at " + p + " ~ " + l)
         else {
           clauseNumbers += (p -> (l,a))
@@ -54,6 +56,10 @@ extends JavaTokenParsers with RegexParsers {
       }
     case wl => throw new Exception("Wrong line " + wl)
   }
+  
+  // ToDo: There is a bug somewhere in the method below. 
+  // It is transforming DAGs into trees.
+  
   
   /**
    * Resolves the clauses represented by a list of indices in the correct order.
@@ -85,7 +91,8 @@ extends JavaTokenParsers with RegexParsers {
   }
   
   /**
-   * Recursively resolves clauses, given two maps for positive/negative occurances of variables
+   * Recursively resolves clauses, given two maps for 
+   * positive/negative occurrences of variables
    * 
    * For TraceCheck chains, the following invariant holds:
    * At every point either 
@@ -93,7 +100,7 @@ extends JavaTokenParsers with RegexParsers {
    * or there is only one clause remaining
    * 
    * In the first case, this literal is used for resolving the respective clauses and updating the
-   * occurange maps
+   * occurrence maps
    * In the other case, the one clause is returned 
    * (either when no pivot is found or when the resolved clause is empty)
    */
@@ -104,7 +111,7 @@ extends JavaTokenParsers with RegexParsers {
     }).map(a => a._1)
 //    println(nextPivot)
     nextPivot match {
-      //no more pivot means posOc and/or negOc can only contain 1 clause in the sets of occurances
+      //no more pivot means posOc and/or negOc can only contain 1 clause in the sets of occurrences
       case None => 
         if (posOc.size > 0) posOc.last._2.last 
         else negOc.last._2.last
