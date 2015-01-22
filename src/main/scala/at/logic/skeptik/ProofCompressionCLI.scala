@@ -29,6 +29,7 @@ object ProofCompressionCLI {
     ".smtb"  -> ProofParserVeriT,
     ".smtbc"  -> ProofParserVeriT,
     ".smt2_proof"  -> ProofParserVeriT,
+    ".smt2.proof"  -> ProofParserVeriT,
     ".skeptik"  -> ProofParserSkeptik,
     ".s" -> ProofParserSkeptik,
     ".tc" -> ProofParserTraceCheck,
@@ -129,7 +130,8 @@ object ProofCompressionCLI {
       
       for (filename <- c.inputs) {
         
-        val proofFormat = ("""\.[^\.]+$""".r findFirstIn filename) getOrElse { throw new Exception(unknownFormat(filename)) }
+//        val proofFormat = ("""\.[^\.]+$""".r findFirstIn filename) getOrElse { throw new Exception(unknownFormat(filename)) }
+        val proofFormat = ("""\..+$""".r findFirstIn filename) getOrElse { throw new Exception(unknownFormat(filename)) }
         val proofName = filename.split(proofFormat)(0) // filename without extension
         val proofParser = proofParsers.getOrElse(proofFormat, {throw new Exception(unknownFormat(filename))})
         
