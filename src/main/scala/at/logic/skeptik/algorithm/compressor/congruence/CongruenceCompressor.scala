@@ -75,15 +75,19 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
               case Some(path) => {
                 path.toProof match {
                   case Some(proof) => {
-                    val newSize = proof.root.conclusion.ant.size
+//                    val newSize = proof.root.conclusion.ant.size
+                    val leftEqsNew = proof.root.conclusion.ant.filter(EqW.isEq(_)).map(EqW(_))
+                    val newSize = leftEqsNew.size
                     val oldSize = leftEqs.size
 //                    val line = oldSize + ", " + newSize + ", " + theorylemma + "\n"
 //                    output.write(line)
 //                    if (proof.size > 1) println("Proof is bigger than 1")
-                    if (newSize < oldSize || (newSize == oldSize && proof.size < Proof(fixedNode).size)) {
-//                      println("found a smaller one!")
-                      TheoryLemma(proof.root.conclusion)
-//                      proof.root
+                    val axiom = path.toAxiom
+                    if (newSize < oldSize) {// || (newSize == oldSize && proof.size < Proof(fixedNode).size)) {
+//                      println("found a smaller one! class: " + node.getClass)
+//                      val axiom = path.toAxiom
+                      proof.root
+//                      axiom
                     }
                     else fixedNode
                   }
@@ -110,14 +114,14 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
     
     val newProof = (proof foldDown traversal)._1
 
-    val resProof2 = newProof.conclusion.ant.foldLeft(newProof)({(A,B) => 
-      reflMap.get(B) match {
-        case Some(node) => R(A,node)
-        case None => A
-      }
-    })
-//    val resProof2 = newProof
-//    if (!resProof2.conclusion.isEmpty) println("Non empty proof")
+//    val resProof2 = newProof.conclusion.ant.foldLeft(newProof)({(A,B) => 
+//      reflMap.get(B) match {
+//        case Some(node) => R(A,node)
+//        case None => A
+//      }
+//    })
+    val resProof2 = newProof
+    if (!resProof2.conclusion.isEmpty) println("Non empty proof")
 //    println("proof: " + newProof)
     //DAGify is necessary to gain reasonable compression, due to recreation of some axioms in subproof production
     DAGify(resProof2)

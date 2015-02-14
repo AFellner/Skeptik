@@ -76,6 +76,11 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
     (node.conclusion.ant.map(EqW(_).l.t) ++ node.conclusion.suc.map(EqW(_).l.t)).mkString(",")
   }
   
+  def toAxiom(implicit eqReferences: MMap[(E,E),EqW]): TheoryLemma = {
+    val conclusion = new immutable.SeqSequent(originalEqs.map(_.equality).toSeq,Seq(EqW(firstVert,lastVert).equality))
+    TheoryLemma(conclusion)
+  }
+  
   /**
    * the toProof method transforms a EquationPath into a corresponding Resolution proof.
    * To do so, it first calls its buildTransChain method.
@@ -253,7 +258,9 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
   def originalEqs: Set[EqW] = pred match {
     case Some(pr) => {
       val predOrig = pr.nextTree.originalEqs
-      val extra = if (pr.label.deducePaths.isEmpty) Set(pr.eq)
+      val extra = if (pr.label.deducePaths.isEmpty && !pr.eq.l.equals(pr.eq.r)) {
+        Set(pr.eq)
+      }
       else pr.label.deducePaths.foldLeft(Set[EqW]())({(A,B) => A union B.originalEqs})
       predOrig union extra
     }
