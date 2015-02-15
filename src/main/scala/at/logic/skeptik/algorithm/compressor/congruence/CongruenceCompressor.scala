@@ -84,7 +84,7 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
 //                    if (proof.size > 1) println("Proof is bigger than 1")
                     val axiom = path.toAxiom
                     if (newSize < oldSize) {// || (newSize == oldSize && proof.size < Proof(fixedNode).size)) {
-//                      println("found a smaller one! class: " + node.getClass)
+                      if (!node.isInstanceOf[TheoryR]) println("found a smaller one that is node TheoryR " + node.getClass)
 //                      val axiom = path.toAxiom
                       proof.root
 //                      axiom
