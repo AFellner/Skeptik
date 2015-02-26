@@ -17,4 +17,4 @@ object FibonacciCongruence extends CongruenceCompressor with FibonacciStructure
 
 object ProofTreeCongruence extends CongruenceCompressor with ProofTreeStructure
 
-
+object PerfectCongruence extends CongruenceCompressor with PerfectStructure

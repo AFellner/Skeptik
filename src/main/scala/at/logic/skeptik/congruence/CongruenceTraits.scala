@@ -32,3 +32,9 @@ trait ProofTreeStructure {
     ProofTreeCon(eqReferences)
   }
 }
+
+trait PerfectStructure {
+  def newCon(implicit eqReferences: MMap[(E,E),EqW]): Congruence = {
+    PerfectCon(eqReferences)
+  }
+}

@@ -63,6 +63,7 @@ package object compressor {
     "ArrayC" -> ArrayCongruence,
     "FibC" -> FibonacciCongruence,
     "PtC" -> ProofTreeCongruence,
+    "PerfC" -> PerfectCongruence,
     
     //Subsumptin Algorithms
     "TDS" -> TopDownSubsumption,

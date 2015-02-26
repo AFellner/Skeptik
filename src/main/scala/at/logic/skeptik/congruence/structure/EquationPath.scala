@@ -115,7 +115,10 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
     }
     else { //Case 3
       if (this.isReflexive) Some(EqReflexive(this.firstVert))
-      else None  
+      else {
+//       println("Ending up in this case")
+       None   
+      }
     }
   }
   
@@ -200,8 +203,8 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
         }
       }
     })
-    refl.foreach(p => reflMap.update(EqW(p.v,p.v).equality, EqReflexive(p.v)))
-    val congrEqs = eqs ++ refl.map(p => EqW(p.v,p.v).equality)
+//    refl.foreach(p => {println("adding " +p+"to reflMap");reflMap.update(EqW(p.v,p.v).equality, EqReflexive(p.v))})
+    val congrEqs = eqs // ++ refl.map(p => EqW(p.v,p.v).equality)
     val congr = EqCongruent(congrEqs,eq.equality)
     roots.foldLeft(congr.asInstanceOf[N])({(A,B) => 
       try R(A,B)
@@ -258,7 +261,7 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
   def originalEqs: Set[EqW] = pred match {
     case Some(pr) => {
       val predOrig = pr.nextTree.originalEqs
-      val extra = if (pr.label.deducePaths.isEmpty && !pr.eq.l.equals(pr.eq.r)) {
+      val extra = if (pr.label.deducePaths.isEmpty) {
         Set(pr.eq)
       }
       else pr.label.deducePaths.foldLeft(Set[EqW]())({(A,B) => A union B.originalEqs})

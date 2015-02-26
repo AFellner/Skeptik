@@ -20,7 +20,7 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class CongruenceSpecification extends SpecificationWithJUnit {
-    val testcase = 5
+    val testcase = -8
     
     val ty = o
     
@@ -61,7 +61,7 @@ class CongruenceSpecification extends SpecificationWithJUnit {
     implicit val eqReferences = MMap[(E,E),EqW]()
     implicit val reflMap = MMap[E,N]()
 
-    var con: AbstractCongruence = FibCon(eqReferences)
+    var con: AbstractCongruence = PerfectCon(eqReferences)
     var path: Option[EquationPath] = None
     var isCongruent = false
     

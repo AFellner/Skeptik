@@ -62,8 +62,8 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
         //A more selective criteria here should speed up the algorithm, 
         //possibly at the cost of less compression
 //        val resNode = if (lowTheoryLemma.contains(node)) {
-//        val resNode = if (true) {
-        val resNode = if ((node.isInstanceOf[TheoryR] || node.isInstanceOf[TheoryAxiom]) && hasNonEqChild(node,proof)) {
+        val resNode = if (true) {
+//        val resNode = if ((node.isInstanceOf[TheoryR] || node.isInstanceOf[TheoryAxiom]) && hasNonEqChild(node,proof)) {
 //          println("Actually trying!: " + node.getClass)
           val rightEqs = fixedNode.conclusion.suc.filter(EqW.isEq(_)).map(EqW(_))
           val leftEqs = fixedNode.conclusion.ant.filter(EqW.isEq(_)).map(EqW(_))
@@ -73,26 +73,13 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
             val con2 = con.addNode(eq.l).addNode(eq.r).updateLazy
             con2.explain(eq.l,eq.r) match {
               case Some(path) => {
-                path.toProof match {
-                  case Some(proof) => {
-//                    val newSize = proof.root.conclusion.ant.size
-                    val leftEqsNew = proof.root.conclusion.ant.filter(EqW.isEq(_)).map(EqW(_))
-                    val newSize = leftEqsNew.size
-                    val oldSize = leftEqs.size
-//                    val line = oldSize + ", " + newSize + ", " + theorylemma + "\n"
-//                    output.write(line)
-//                    if (proof.size > 1) println("Proof is bigger than 1")
-                    val axiom = path.toAxiom
-                    if (newSize < oldSize) {// || (newSize == oldSize && proof.size < Proof(fixedNode).size)) {
-                      if (!node.isInstanceOf[TheoryR]) println("found a smaller one that is node TheoryR " + node.getClass)
-//                      val axiom = path.toAxiom
-                      proof.root
-//                      axiom
-                    }
-                    else fixedNode
+                if (path.originalEqs.size < leftEqs.size) {
+                  path.toProof match {
+                    case Some(proof) => proof.root
+                    case None => fixedNode
                   }
-                  case None => fixedNode
                 }
+                else fixedNode
               }
               case _ => fixedNode
             }
