@@ -10,6 +10,7 @@ import scala.collection.mutable.{HashMap => MMap}
 import at.logic.skeptik.proof.Proof.apply
 import at.logic.skeptik.proof.sequent.{SequentProofNode => N}
 import scala.collection.mutable.{HashMap => MMap}
+import at.logic.skeptik.judgment.immutable.{SeqSequent => Sequent}
 
 case class EqLabel(equation: EqW, deducePaths: Set[EquationPath]) {
   val size: Int = deducePaths.foldLeft(1)({(A,B) => 
@@ -101,20 +102,25 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
    *  
    *  
    */
-  def toProof(implicit eqReferences: MMap[(E,E),EqW], reflMap: MMap[E,N]): Option[Proof[N]] = {
+  def toProof(implicit eqReferences: MMap[(E,E),EqW], reflMap: MMap[E,N], nodeMap: MMap[Sequent,N]): Option[Proof[N]] = {
     val (first,last,equations,deduced) = this.buildTransChain
     if (equations.size > 1) {
       val transNode = EqTransitive(equations,first,last)
-      val res = deduced.foldLeft(transNode.asInstanceOf[N])({(A,B) => 
-        R(A,B)
+      val transNode2 = replaceInNodeMap(transNode,nodeMap)
+      val res = deduced.foldLeft(transNode2.asInstanceOf[N])({(A,B) => 
+        val x = R(A,B)
+        replaceInNodeMap(x,nodeMap)
       })
       Some(res)
     }
     else if (deduced.size == 1) { //Case 2
-      Some(deduced.last)
+      Some(replaceInNodeMap(deduced.last,nodeMap))
     }
     else { //Case 3
-      if (this.isReflexive) Some(EqReflexive(this.firstVert))
+      if (this.isReflexive) {
+        val x = EqReflexive(this.firstVert)
+        Some(replaceInNodeMap(x,nodeMap))
+      }
       else {
 //       println("Ending up in this case")
        None   
@@ -137,7 +143,7 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
    *         DED are all results of calls to buildDeduction, 
    *             collected as a tuple of a SequentProofNode (N) and the equality if proves (as an EqW object)
    */
-  def buildTransChain(implicit eqReferences: MMap[(E,E),EqW], reflMap: MMap[E,N]): (E,E,Seq[EqW],Seq[N]) = {
+  def buildTransChain(implicit eqReferences: MMap[(E,E),EqW], reflMap: MMap[E,N], nodeMap: MMap[Sequent,N]): (E,E,Seq[EqW],Seq[N]) = {
     pred match {
       case Some(pr) => {
         val predEq = pr.label.equation
@@ -152,6 +158,19 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
         (v,v,Seq(),Seq())
       }
     }
+  }
+  
+  def replaceInNodeMap(node: N, nodeMap: MMap[Sequent,N]) = {
+//    if (nodeMap.contains(node.conclusion)) {
+//      val inMap = nodeMap(node.conclusion)
+//      if (Proof(inMap).size > Proof(node).size) {
+//        nodeMap.update(node.conclusion,node)
+//        node
+//      }
+//      else inMap
+//    }
+//    else nodeMap += (node.conclusion -> node); node
+    node
   }
   
   /**
@@ -181,7 +200,7 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
    * @res a SequentProofNode representing the full proof of the input equality from input axioms only.
    **/
     
-  def buildDeduction(dds: Set[EquationPath], eq: EqW) (implicit eqReferences: MMap[(E,E),EqW], reflMap: MMap[E,N]) = {
+  def buildDeduction(dds: Set[EquationPath], eq: EqW) (implicit eqReferences: MMap[(E,E),EqW], reflMap: MMap[E,N], nodeMap: MMap[Sequent,N]) = {
     val (refl,reflRest) = dds.partition(_.isReflexive)
     val (roots,eqs) = dds.foldLeft((Set[N](),Seq[E]()))({(A,B) => 
       val exSym = A._1.find(node => {
@@ -192,8 +211,10 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
       exSym match {
         case Some(node) => {
           val s = EqSymmetric(EqW(node.conclusion.suc.last))
-          val r = R(s,node)
-          (A._1 + r,A._2 :+ r.conclusion.suc.last)
+          val s2 = replaceInNodeMap(s,nodeMap)
+          val r = R(s2,node)
+          val r2 = replaceInNodeMap(r,nodeMap)
+          (A._1 + r2,A._2 :+ r2.conclusion.suc.last)
         }
         case None => {
           B.toProof match {
@@ -203,16 +224,17 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
         }
       }
     })
-//    refl.foreach(p => {println("adding " +p+"to reflMap");reflMap.update(EqW(p.v,p.v).equality, EqReflexive(p.v))})
+    refl.foreach(p => {reflMap.update(EqW(p.v,p.v).equality, EqReflexive(p.v))})
     val congrEqs = eqs // ++ refl.map(p => EqW(p.v,p.v).equality)
-    val congr = EqCongruent(congrEqs,eq.equality)
+    val congr = replaceInNodeMap(EqCongruent(congrEqs,eq.equality),nodeMap)
     roots.foldLeft(congr.asInstanceOf[N])({(A,B) => 
-      try R(A,B)
+      val x = try R(A,B)
       catch {
         case e: Exception => {
           A
         }
       }
+      replaceInNodeMap(x,nodeMap)
     })
   }
 

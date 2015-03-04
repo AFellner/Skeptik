@@ -8,8 +8,10 @@ import at.logic.skeptik.algorithm.compressor._
 import at.logic.skeptik.proof.sequent.lk._
 import at.logic.skeptik.proof.sequent.{SequentProofNode => N}
 import scala.collection.mutable.{HashMap => MMap, HashSet => MSet}
+import scala.collection.immutable.{HashMap => IMap, HashSet => ISet}
 import at.logic.skeptik.congruence.AbstractCongruence
 import at.logic.skeptik.congruence.structure.{EqW,EquationPath}
+import at.logic.skeptik.judgment.immutable.{SeqSequent => Sequent}
 
 /**
  * abstract class CongruenceCompressor traverses the proof while searching for nodes, 
@@ -28,6 +30,8 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
   def apply(proof: Proof[N]) = {
     implicit val eqReferences = MMap[(E,E),EqW]()
     implicit val reflMap = MMap[E,N]()
+    implicit val nodeMap = MMap[Sequent,N]()
+    val resWithMap = MMap[E,N]()
     
     //Proof statistics output
 //    val directory = "/global/lv70340/AFellner/explsize_13/"
@@ -53,65 +57,146 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
     
     // main traversal
     
-    def traversal(node: N, fromPr: Seq[(N,Boolean)]): (N,Boolean) = {
-      if (fromPr.isEmpty) (node,node.isInstanceOf[TheoryAxiom])
-      else {
-        val fixedNode = fixNode(node,fromPr.map(_._1))
-        var theorylemma = fromPr.map(_._2).forall(b => b)
+    def traversal(node: N, fromPr: Seq[(N,Set[EqW],Set[EqW],Set[EqW],IMap[E,N],Boolean)]): (N,Set[EqW],Set[EqW],Set[EqW],IMap[E,N],Boolean) = {
+      val premiseFixed = if (fromPr.isEmpty) false else fromPr.map(_._6).max
+      if (!premiseFixed) {
+        val leftEqs = node.conclusion.ant.filter(EqW.isEq(_)).map(EqW(_))
+        val rightEqs = node.conclusion.suc.filter(EqW.isEq(_)).map(EqW(_))
         
-        //A more selective criteria here should speed up the algorithm, 
-        //possibly at the cost of less compression
-//        val resNode = if (lowTheoryLemma.contains(node)) {
-        val resNode = if (true) {
-//        val resNode = if ((node.isInstanceOf[TheoryR] || node.isInstanceOf[TheoryAxiom]) && hasNonEqChild(node,proof)) {
-//          println("Actually trying!: " + node.getClass)
-          val rightEqs = fixedNode.conclusion.suc.filter(EqW.isEq(_)).map(EqW(_))
-          val leftEqs = fixedNode.conclusion.ant.filter(EqW.isEq(_)).map(EqW(_))
-//          println("bla1")
-          val con = newCon.addAll(leftEqs)
+//        println("adding " + rightEqs.mkString(", ") + " from: " + node)
+        
+        val leftEqsPremise = fromPr.map(_._2).flatten.toSet
+        val rightEqsPremise = fromPr.map(_._3).flatten.toSet
+        val allAxiomsPremise = fromPr.map(_._4).flatten.toSet
+        
+        val allLeftEqs = leftEqsPremise ++ leftEqs
+        val allRightEqs = rightEqsPremise ++ rightEqs
+        val allAxioms = if (rightEqs.size == 1 && leftEqs.size == 0) allAxiomsPremise + rightEqs.last else allAxiomsPremise
+        
+        val resWithPremise = 
+          if (fromPr.isEmpty) IMap[E,N]()
+          else fromPr.map(_._5).tail.foldLeft(fromPr.map(_._5).head)({(A,B) => 
+            A ++ B
+          })
+        
+        //internal theory node -> enlarge sets
+        if (!hasNonEqChild(node,proof)) {
+//          val resWith = if (!rightEqs.isEmpty) resWithPremise + node else resWithPremise
+//          val resWith = if (node.isInstanceOf[TheoryAxiom]) resWithPremise + node else resWithPremise
+          
+//          val resWith = {
+//            if (rightEqs.size == 1 && !resWithPremise.isDefinedAt(rightEqs.last.equality)) 
+//              resWithPremise + (rightEqs.last.equality -> node)
+//            else resWithPremise
+//          }
+          val resWith = rightEqs.foldLeft(resWithPremise)({(A,B) =>
+            A + (B.equality -> node)
+          })
+          (node,allLeftEqs,allRightEqs,allAxioms,resWith,false)
+        }
+        //low theory lemma
+        else {
+          val currentExplanation = leftEqs ++ allAxioms
+          val con = newCon.addAll(currentExplanation)
           val eqToMap = rightEqs.map(eq => {
             val con2 = con.addNode(eq.l).addNode(eq.r).updateLazy
             con2.explain(eq.l,eq.r) match {
               case Some(path) => {
-                if (path.originalEqs.size < leftEqs.size) {
+                if (path.originalEqs.size < currentExplanation.size) {
+//                  println("Found a better explanation: ")
+//                  println(path.originalEqs.mkString(", "))
+//                  println(currentExplanation.mkString(", "))
                   path.toProof match {
-                    case Some(proof) => proof.root
-                    case None => fixedNode
+                    case Some(localProof) => {
+                      val finalProof = localProof.root.conclusion.ant.filter(EqW.isEq(_)).foldLeft(localProof.root)({(A,B) => 
+                        if (resWithPremise.isDefinedAt(B)) {
+//                          println("Having something to resolve against")
+                          try {
+                            R(resWithPremise(B),A)
+                          }
+                          catch {
+                            case e:Exception => {
+                              println(A.conclusion + " not resolavable with:\n" + resWithPremise(B) + "\nliteral is supposed to be: " + B)
+                              throw(e)
+                            }
+                          }
+                        }
+                        else A
+                      })
+                      replaceInNodeMap(localProof.root,nodeMap)
+                    }
+                    case None => replaceInNodeMap(node,nodeMap)
                   }
                 }
-                else fixedNode
+                else replaceInNodeMap(node,nodeMap)
               }
-              case _ => fixedNode
+              case _ => replaceInNodeMap(node,nodeMap)
             }
           })
           
           val x = if (eqToMap.isEmpty) {
-            fixedNode 
+            replaceInNodeMap(node,nodeMap)
           }
           else eqToMap.minBy(_.conclusion.size)
-          x
+//          val y = resWithPremise.foldLeft(x)({(A,B) => 
+//            val out = try R(A,B)
+//            catch {
+//              case e: Exception => {
+//                A
+//              }
+//            }
+//            replaceInNodeMap(out,nodeMap)
+//          })
+          val y = x
+//          if (Proof(y).size > Proof(node).size) {
+//            println("proof got bigger by replacing; sizes: " + y.conclusion.size + " vs " + node.conclusion.size)
+//          }
+          replaceInNodeMap(y,nodeMap)
+          (y,ISet(),ISet(),ISet(),IMap[E,N](),true)
         }
-        else {
-          fixedNode
-        }
-        (resNode,theorylemma)
+      }
+      else {
+        val fixedNode = fixNode(node,fromPr.map(_._1))
+        val outNode = replaceInNodeMap(fixedNode,nodeMap)
+        (outNode,ISet(),ISet(),ISet(),IMap[E,N](),true)
       }
     }
 //    proof foldDown classifyNodes
     
     val newProof = (proof foldDown traversal)._1
 
-//    val resProof2 = newProof.conclusion.ant.foldLeft(newProof)({(A,B) => 
-//      reflMap.get(B) match {
-//        case Some(node) => R(A,node)
-//        case None => A
-//      }
-//    })
-    val resProof2 = newProof
-    if (!resProof2.conclusion.isEmpty) println("Non empty proof")
+    val resProof2 = newProof.conclusion.ant.foldLeft(newProof)({(A,B) => 
+      reflMap.get(B) match {
+        case Some(node) => replaceInNodeMap(R(A,node),nodeMap)
+        case None => replaceInNodeMap(A,nodeMap)
+      }
+    })
+    val finalProof = resProof2.conclusion.ant.foldLeft(resProof2)({(A,B) => 
+      if (resWithMap.isDefinedAt(B)) {
+        println("Having something to resolve against")
+        R(resWithMap(B),A)
+      }
+      else A
+    })
+//    val resProof2 = newProof
+    if (!finalProof.conclusion.isEmpty) println("Non empty proof" + finalProof)
+//    resProof2
 //    println("proof: " + newProof)
     //DAGify is necessary to gain reasonable compression, due to recreation of some axioms in subproof production
-    DAGify(resProof2)
+    DAGify(finalProof)
+  }
+  
+  def replaceInNodeMap(node: N, nodeMap: MMap[Sequent,N]) = {
+//    if (nodeMap.contains(node.conclusion)) {
+//      val inMap = nodeMap(node.conclusion)
+//      if (Proof(inMap).size > Proof(node).size) {
+//        nodeMap.update(node.conclusion,node)
+//        node
+//      }
+//      else inMap
+//    }
+//    else nodeMap += (node.conclusion -> node); node
+    node
   }
   
   def hasNonEqChild(node: N, proof: Proof[N]): Boolean = {
