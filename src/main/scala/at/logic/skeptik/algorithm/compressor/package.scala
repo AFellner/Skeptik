@@ -61,7 +61,10 @@ package object compressor {
     
     //Congruence Algorithms
     "ArrayC" -> ArrayCongruence,
-    "FibC" -> FibonacciCongruence,
+    "FC" -> FibonacciCongruence,
+    "FCnosub" -> FCnosub,
+    "FCtheory" -> FCtheory,
+    "FCnosubtheory" -> FCnosubtheory,
     "PtC" -> ProofTreeCongruence,
     
     //Subsumptin Algorithms

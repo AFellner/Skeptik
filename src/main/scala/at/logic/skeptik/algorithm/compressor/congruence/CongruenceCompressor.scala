@@ -3,7 +3,6 @@ package at.logic.skeptik.algorithm.compressor.congruence
 import at.logic.skeptik.util.io.FileOutput
 import at.logic.skeptik.expression.{E,App}
 import at.logic.skeptik.proof._
-import at.logic.skeptik.proof.sequent.{SequentProofNode => N}
 import at.logic.skeptik.algorithm.compressor._
 import at.logic.skeptik.proof.sequent.lk._
 import at.logic.skeptik.proof.sequent.{SequentProofNode => N}
@@ -24,6 +23,10 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
   
   
   def newCon(implicit eqReferences: MMap[(E,E),EqW]): AbstractCongruence
+  
+  def applyCriterion(node: N, proof: Proof[N]): Boolean
+  
+  def generateSubProofs: Boolean
   
   def apply(proof: Proof[N]) = {
     implicit val eqReferences = MMap[(E,E),EqW]()
@@ -62,8 +65,9 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
         //A more selective criteria here should speed up the algorithm, 
         //possibly at the cost of less compression
 //        val resNode = if (lowTheoryLemma.contains(node)) {
+        val resNode = if (applyCriterion(node,proof)) {
 //        val resNode = if (true) {
-        val resNode = if ((node.isInstanceOf[TheoryR] || node.isInstanceOf[TheoryAxiom]) && hasNonEqChild(node,proof)) {
+//        val resNode = if ((node.isInstanceOf[TheoryR] || node.isInstanceOf[TheoryAxiom]) && hasNonEqChild(node,proof)) {
 //          println("Actually trying!: " + node.getClass)
           val rightEqs = fixedNode.conclusion.suc.filter(EqW.isEq(_)).map(EqW(_))
           val leftEqs = fixedNode.conclusion.ant.filter(EqW.isEq(_)).map(EqW(_))
@@ -76,20 +80,18 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
                 path.toProof match {
                   case Some(proof) => {
 //                    val newSize = proof.root.conclusion.ant.size
-                    val leftEqsNew = proof.root.conclusion.ant.filter(EqW.isEq(_)).map(EqW(_))
-                    val newSize = leftEqsNew.size
-                    val oldSize = leftEqs.size
-//                    val line = oldSize + ", " + newSize + ", " + theorylemma + "\n"
-//                    output.write(line)
-//                    if (proof.size > 1) println("Proof is bigger than 1")
                     val axiom = path.toAxiom
-                    if (newSize < oldSize) {// || (newSize == oldSize && proof.size < Proof(fixedNode).size)) {
-//                      println("found a smaller one! class: " + node.getClass)
-//                      val axiom = path.toAxiom
-                      proof.root
-//                      axiom
+                    if (generateSubProofs) {
+                      val leftEqsNew = proof.root.conclusion.ant.filter(EqW.isEq(_)).map(EqW(_))
+  //                    val newSize = axiom.conclusion.size
+                      val newSize = leftEqsNew.size
+                      val oldSize = leftEqs.size
+                      if (newSize < oldSize) {// || (newSize == oldSize && proof.size < Proof(fixedNode).size)) {
+                        proof.root
+                      }
+                      else fixedNode
                     }
-                    else fixedNode
+                    else axiom
                   }
                   case None => fixedNode
                 }
@@ -112,7 +114,8 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
     }
 //    proof foldDown classifyNodes
     
-    val newProof = (proof foldDown traversal)._1
+    val initProof = if (!generateSubProofs) PruneTheory(proof) else proof
+    val newProof = (initProof foldDown traversal)._1
 
 //    val resProof2 = newProof.conclusion.ant.foldLeft(newProof)({(A,B) => 
 //      reflMap.get(B) match {

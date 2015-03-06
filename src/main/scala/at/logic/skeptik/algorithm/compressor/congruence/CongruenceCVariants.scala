@@ -11,10 +11,14 @@ trait local {
   def globalAxioms = false
 }
 
-object ArrayCongruence extends CongruenceCompressor with ArrayStructure
+object ArrayCongruence extends CongruenceCompressor with ArrayStructure with subproofs with applyToAll
 
-object FibonacciCongruence extends CongruenceCompressor with FibonacciStructure
+object FibonacciCongruence extends CongruenceCompressor with FibonacciStructure with subproofs with applyToAll
 
-object ProofTreeCongruence extends CongruenceCompressor with ProofTreeStructure
+object ProofTreeCongruence extends CongruenceCompressor with ProofTreeStructure with subproofs with applyToAll
 
+object FCnosub extends CongruenceCompressor with FibonacciStructure with outSubproofs with applyToAll
 
+object FCtheory extends CongruenceCompressor with FibonacciStructure with subproofs with applyToTheory
+
+object FCnosubtheory extends CongruenceCompressor with FibonacciStructure with outSubproofs with applyToTheory
