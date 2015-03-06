@@ -32,6 +32,7 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
     implicit val reflMap = MMap[E,N]()
     implicit val nodeMap = MMap[Sequent,N]()
     val resWithMap = MMap[E,N]()
+    val axiomMap = MMap[E,N]()
     
     //Proof statistics output
 //    val directory = "/global/lv70340/AFellner/explsize_13/"
@@ -59,19 +60,25 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
     
     def traversal(node: N, fromPr: Seq[(N,Set[EqW],Set[EqW],Set[EqW],IMap[E,N],Boolean)]): (N,Set[EqW],Set[EqW],Set[EqW],IMap[E,N],Boolean) = {
       val premiseFixed = if (fromPr.isEmpty) false else fromPr.map(_._6).max
-      if (!premiseFixed) {
+//      if (!premiseFixed) {
+      if (true) {
+        var fixed =false;
         val leftEqs = node.conclusion.ant.filter(EqW.isEq(_)).map(EqW(_))
         val rightEqs = node.conclusion.suc.filter(EqW.isEq(_)).map(EqW(_))
         
 //        println("adding " + rightEqs.mkString(", ") + " from: " + node)
         
-        val leftEqsPremise = fromPr.map(_._2).flatten.toSet
-        val rightEqsPremise = fromPr.map(_._3).flatten.toSet
-        val allAxiomsPremise = fromPr.map(_._4).flatten.toSet
+        val leftEqsPremise = fromPr.map(_._2).foldLeft(ISet[EqW]())({(A,B) => A ++ B})
+        val rightEqsPremise = fromPr.map(_._3).foldLeft(ISet[EqW]())({(A,B) => A ++ B})
+        val allAxiomsPremise = fromPr.map(_._4).foldLeft(ISet[EqW]())({(A,B) => A ++ B})
         
         val allLeftEqs = leftEqsPremise ++ leftEqs
         val allRightEqs = rightEqsPremise ++ rightEqs
-        val allAxioms = if (rightEqs.size == 1 && leftEqs.size == 0) allAxiomsPremise + rightEqs.last else allAxiomsPremise
+        val allAxioms = 
+          if (node.conclusion.size == 1 && rightEqs.size == 1 && leftEqs.size == 0) {
+            axiomMap += (rightEqs.last.equality -> node)
+            allAxiomsPremise + rightEqs.last
+          } else allAxiomsPremise
         
         val resWithPremise = 
           if (fromPr.isEmpty) IMap[E,N]()
@@ -81,14 +88,12 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
         
         //internal theory node -> enlarge sets
         if (!hasNonEqChild(node,proof)) {
+//        if (false) {
 //          val resWith = if (!rightEqs.isEmpty) resWithPremise + node else resWithPremise
 //          val resWith = if (node.isInstanceOf[TheoryAxiom]) resWithPremise + node else resWithPremise
           
-//          val resWith = {
-//            if (rightEqs.size == 1 && !resWithPremise.isDefinedAt(rightEqs.last.equality)) 
-//              resWithPremise + (rightEqs.last.equality -> node)
-//            else resWithPremise
-//          }
+//          val res
+
           val resWith = rightEqs.foldLeft(resWithPremise)({(A,B) =>
             A + (B.equality -> node)
           })
@@ -108,16 +113,33 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
 //                  println(currentExplanation.mkString(", "))
                   path.toProof match {
                     case Some(localProof) => {
-                      val finalProof = localProof.root.conclusion.ant.filter(EqW.isEq(_)).foldLeft(localProof.root)({(A,B) => 
-                        if (resWithPremise.isDefinedAt(B)) {
-//                          println("Having something to resolve against")
+                      fixed = true;
+//                      val finalProof = localProof.root.conclusion.ant.filter(EqW.isEq(_)).foldLeft(localProof.root)({(A,B) => 
+//                        if (resWithPremise.isDefinedAt(B)) {
+////                          println("Having something to resolve against")
+//                          try {
+//                            R(resWithPremise(B),A)
+//                          }
+//                          catch {
+//                            case e:Exception => {
+//                              println(A.conclusion + " not resolavable with:\n" + resWithPremise(B) + "\nliteral is supposed to be: " + B)
+//                              throw(e)
+//                            }
+//                          }
+//                        }
+//                        else A
+//                      })
+                      val finalProof = proof.root.conclusion.ant.foldLeft(localProof.root)({(A,B) => 
+                        if (axiomMap.contains(B)) {
                           try {
-                            R(resWithPremise(B),A)
+                            R(A,axiomMap(B))
                           }
                           catch {
-                            case e:Exception => {
-                              println(A.conclusion + " not resolavable with:\n" + resWithPremise(B) + "\nliteral is supposed to be: " + B)
-                              throw(e)
+                            case e: Exception => {
+                              println("A: " + A)
+                              println("B: " + axiomMap(B))
+//                              throw(e)
+                              A
                             }
                           }
                         }
@@ -152,7 +174,8 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
 //            println("proof got bigger by replacing; sizes: " + y.conclusion.size + " vs " + node.conclusion.size)
 //          }
           replaceInNodeMap(y,nodeMap)
-          (y,ISet(),ISet(),ISet(),IMap[E,N](),true)
+          (y,allLeftEqs,allRightEqs,allAxioms,resWithPremise,fixed)
+//          (y,ISet(),ISet(),ISet(),IMap[E,N](),true)
         }
       }
       else {
