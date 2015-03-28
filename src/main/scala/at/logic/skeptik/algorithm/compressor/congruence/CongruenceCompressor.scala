@@ -114,7 +114,8 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
     }
 //    proof foldDown classifyNodes
     
-    val initProof = if (!generateSubProofs) PruneTheory(proof) else proof
+//    val initProof = if (!generateSubProofs) PruneTheory(proof) else proof
+    val initProof = proof
     val newProof = (initProof foldDown traversal)._1
 
 //    val resProof2 = newProof.conclusion.ant.foldLeft(newProof)({(A,B) => 
@@ -127,7 +128,8 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
     if (!resProof2.conclusion.isEmpty) println("Non empty proof")
 //    println("proof: " + newProof)
     //DAGify is necessary to gain reasonable compression, due to recreation of some axioms in subproof production
-    DAGify(resProof2)
+//    DAGify(resProof2)
+    resProof2
   }
   
   def hasNonEqChild(node: N, proof: Proof[N]): Boolean = {

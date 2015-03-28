@@ -20,7 +20,7 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class CongruenceSpecification extends SpecificationWithJUnit {
-    val testcase = 5
+    val testcase = -8
     
     val ty = o
     
