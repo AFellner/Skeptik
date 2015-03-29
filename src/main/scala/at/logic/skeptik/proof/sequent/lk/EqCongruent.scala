@@ -36,6 +36,7 @@ object EqCongruent {
     val correct = (leftSub zip rightSub).forall({tuple => 
       conclusion.ant.exists(lit => EqW.isEq(lit) && EqW(lit) == EqW(tuple._1,tuple._2))
     })
+    if (!correct) println("Not correct eqCongruent!: " + conclusion)
     require(correct)
     new EqCongruent(conclusion)
   }

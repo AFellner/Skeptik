@@ -42,6 +42,7 @@ abstract class WEqGraph(
           A union B.originalEqs
         })
         val weight = eqAll.size
+//        if (weight == 0) println("Adding edge with 0 weight as deduction")
         val eqLabel = EqLabel(EqW(u,v),paths)
         
         newG.addEdge(u, v, eqLabel, weight)

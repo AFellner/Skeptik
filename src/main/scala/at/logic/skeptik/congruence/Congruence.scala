@@ -66,17 +66,29 @@ abstract class Congruence(
   }
   
   def merge(s: E, t: E, eq: Option[EqW]): Congruence = {
-    if (rep(s) != rep(t)) {
+    var didonce = false;
+    var c = this.updateGraph(g.lazyAddEdge(s, t, eq))
+    if (c.rep(s) != c.rep(t)) {
       val deduced = MSet[(E,E)]((s,t))
       val deducedTest = MSet[(E,E)]()
-      var c = this
+//      var c = this
       var realEq = eq
       while (!deduced.isEmpty) {
-        val (u,v) = deduced.head
+        val (u,v) = deduced.last
         deduced -= ((u,v))
+//        if (!((s==u && t==v) || (s == v && t == u))) c = c.updateGraph(g.lazyAddEdge(u, v, None))
+//        if (c.isCongruent(u,v)) {
+          
+//          c = c.updateGraph(g.lazyAddEdge(u, v, realEq))
+          
+//        }
+//        if (didonce) c = c.updateGraph(g.lazyAddEdge(u, v, None))
         if (c.rep(u) != c.rep(v)) {
           c = c.union(u, v, deduced)
+          
         }
+//         realEq = None 
+        didonce = true
       }
       c
     }
@@ -87,7 +99,9 @@ abstract class Congruence(
     //Requirement that should be satisfied
 //    require(rN.forall(l => l._2.forall(r => lookup.isDefinedAt((rep(l._1),rep(r))))))
 //    require(lN.forall(l => l._2.forall(r => lookup.isDefinedAt((rep(r),rep(l._1))))))
+//    println("union of : " + (s,t))
     val c0 = this.updateGraph(g.lazyAddEdge(s, t, None))
+//    val c0 = this
     val lookupNow = lookup
     val (u,v) = if (cclass(rep(s)).size > cclass(rep(t)).size) (s,t) else (t,s)
     val (ru,rv) = (rep(u),rep(v))

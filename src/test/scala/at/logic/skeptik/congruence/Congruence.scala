@@ -8,19 +8,19 @@ import at.logic.skeptik.expression._
 import at.logic.skeptik.congruence.structure._
 import at.logic.skeptik.algorithm.dijkstra._
 import at.logic.skeptik.proof._
+import at.logic.skeptik.judgment.immutable._
 import scala.collection.mutable.{HashMap => MMap}
 import scala.collection.immutable.Queue
 import at.logic.skeptik.algorithm.compressor.congruence._
 import at.logic.skeptik.judgment.immutable.{SeqSequent => Sequent}
-import at.logic.skeptik.proof.sequent.lk.Axiom
-import at.logic.skeptik.proof.sequent.lk.R
+import at.logic.skeptik.proof.sequent.lk._
 import org.junit.runner.RunWith
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class CongruenceSpecification extends SpecificationWithJUnit {
-    val testcase = -8
+    val testcase = -9
     
     val ty = o
     
@@ -66,6 +66,43 @@ class CongruenceSpecification extends SpecificationWithJUnit {
     var isCongruent = false
     
     testcase match {
+      
+      case -9 => {
+        //a = b; f(a) = a; b = f(b); 
+        
+        val t1 = new App(f,a)
+        val t2 = new App(f,b)
+        
+        val eq1 = EqW(a,b)
+        val eq2 = EqW(t1,a)
+        val eq3 = EqW(t2,b)
+        
+        con = con.addEquality(eq1)
+        con = con.addEquality(eq2)
+        con = con.addEquality(eq3)
+        con = con.addNode(t1)
+        con = con.addNode(t2)
+        con = con.updateLazy
+//        con = con.resolveDeducedQueue
+        
+        val tr = EqTransitive(Seq(eq1,eq2,eq3),t1,t2);
+        val ax1 = Axiom(new Sequent(Seq[E](),Seq(eq1.equality)))
+        val ax2 = Axiom(new Sequent(Seq[E](),Seq(eq2.equality)))
+        val ax3 = Axiom(new Sequent(Seq[E](),Seq(eq3.equality)))
+        val ax4 = Axiom(new Sequent(Seq[E](EqW(t1,t2).equality),Seq()))
+        val longR = R(R(R(R(tr,ax1),ax2),ax3),ax4)
+        val longProof = Proof(longR.asInstanceOf[N])
+        println(longProof)
+        
+        val x = new at.logic.skeptik.exporter.smt.FileExporter("manual_congruence",true)
+        x.write(longProof)
+        
+        val comp = FibonacciCongruence(longProof)
+        println(comp)
+        
+        path = con.explain(t1,t2)
+        isCongruent = con.isCongruent(t1, t2)
+      }
       
       case -8 => {
         val t1 = App(App(f1,a),e);
@@ -162,13 +199,11 @@ class CongruenceSpecification extends SpecificationWithJUnit {
         val eq3 = EqW(t1,d)
         val eq4 = EqW(t2,e)
         
-        println("Input: " + List(eq1,eq2,eq3,eq4).mkString(","))
-        
         con = con.addEquality(eq1)
         con = con.addEquality(eq2)
         con = con.addEquality(eq3)
         con = con.addEquality(eq4)
-        
+        con = con.updateLazy
 //        con = con.resolveDeducedQueue
         
         path = con.explain(e,d)
@@ -321,7 +356,10 @@ class CongruenceSpecification extends SpecificationWithJUnit {
             case Some(p) => {
               p.toProof match {
                 case None => false
-                case Some(proof) => true
+                case Some(proof) => {
+                  println(proof)
+                  true
+                }
               }
             }
           }

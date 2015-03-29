@@ -201,8 +201,20 @@ case class EquationPath(val v: E, val pred: Option[EqTreeEdge]) {
       }
     })
     refl.foreach(p => reflMap.update(EqW(p.v,p.v).equality, EqReflexive(p.v)))
-    val congrEqs = eqs ++ refl.map(p => EqW(p.v,p.v).equality)
-    val congr = EqCongruent(congrEqs,eq.equality)
+    val congrEqs = eqs// ++ refl.map(p => EqW(p.v,p.v).equality)
+//    println("congrEqs in buildDeduction: " + congrEqs + " ~ " + eq + " dds: " + dds)
+//    val congr = try{
+      val congr = EqCongruent(congrEqs,eq.equality)
+//    }
+//    catch {
+//      case (e: Exception) => {
+//        eq.equality match {
+//          case App(_,App()) => {
+//            
+//          }
+//        }
+//      }
+//    }
     roots.foldLeft(congr.asInstanceOf[N])({(A,B) => 
       try R(A,B)
       catch {

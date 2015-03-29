@@ -68,7 +68,6 @@ abstract class CongruenceGraph(val lazyEdges: Map[(E,E),Option[EqW]], val order:
   def buildDD(t1: E, eq: Option[EqW], t2: E)(implicit eqReferences: MMap[(E,E),EqW]) = eq match {
     case None => {
       val (sub1,sub2) = (subterms(t1),subterms(t2))
-      if (sub1.size != sub2.size) println("subterms don't match for " + (t1,t2) + " t: " + (t1.t,t2.t) + " s: " + (sub1,sub2) + "\n" + this)
       require(sub1.size == sub2.size)
       val explOpts = (sub1 zip sub2).toSet[Tuple2[E,E]].map(tuple => {
         
@@ -76,6 +75,7 @@ abstract class CongruenceGraph(val lazyEdges: Map[(E,E),Option[EqW]], val order:
         x
       })
       val x = explOpts.filter(_.isDefined).map(_.get)
+//      if (x.forall { y => y.isEmpty }) println("in buildDD: empty explanation")
       x
     }
     case Some(e) => {
