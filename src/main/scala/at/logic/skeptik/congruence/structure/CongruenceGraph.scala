@@ -26,17 +26,21 @@ abstract class CongruenceGraph(val lazyEdges: Map[(E,E),Option[EqW]], val order:
   
   def updateLazyData(edges: Map[(E,E),Option[EqW]], order: Queue[(E,E)]): CongruenceGraph
   
+//  def lazyAddEdge(u: E, v: E, eq: Option[EqW]): CongruenceGraph = {
+//    val newQueue = if (!lazyEdges.isDefinedAt((u,v)) && !lazyEdges.isDefinedAt((v,u))) {
+//      order.enqueue((u,v))
+//    }
+//    else order
+//    eq match {
+//      case Some(_) => {
+//        newGraph(lazyEdges - ((u,v)) - ((v,u)) + ((u,v) -> eq),newQueue)
+//      }
+//      case None => if (lazyEdges.isDefinedAt((u,v)) || lazyEdges.isDefinedAt((v,u))) this else newGraph(lazyEdges +((u,v) -> eq),newQueue)
+//    }
+//  }
+  
   def lazyAddEdge(u: E, v: E, eq: Option[EqW]): CongruenceGraph = {
-    val newQueue = if (!lazyEdges.isDefinedAt((u,v)) && !lazyEdges.isDefinedAt((v,u))) {
-      order.enqueue((u,v))
-    }
-    else order
-    eq match {
-      case Some(_) => {
-        newGraph(lazyEdges - ((u,v)) - ((v,u)) + ((u,v) -> eq),newQueue)
-      }
-      case None => if (lazyEdges.isDefinedAt((u,v)) || lazyEdges.isDefinedAt((v,u))) this else newGraph(lazyEdges +((u,v) -> eq),newQueue)
-    }
+    addEdge(u,v,eq)
   }
   
   def addEdge(u: E, v: E, eq: Option[EqW]): CongruenceGraph

@@ -79,7 +79,7 @@ abstract class Congruence(
 //        if (!((s==u && t==v) || (s == v && t == u))) c = c.updateGraph(g.lazyAddEdge(u, v, None))
 //        if (c.isCongruent(u,v)) {
           
-//          c = c.updateGraph(g.lazyAddEdge(u, v, realEq))
+          c = c.updateGraph(g.lazyAddEdge(u, v, realEq))
           
 //        }
 //        if (didonce) c = c.updateGraph(g.lazyAddEdge(u, v, None))
@@ -87,7 +87,7 @@ abstract class Congruence(
           c = c.union(u, v, deduced)
           
         }
-//         realEq = None 
+         realEq = None 
         didonce = true
       }
       c
@@ -100,8 +100,8 @@ abstract class Congruence(
 //    require(rN.forall(l => l._2.forall(r => lookup.isDefinedAt((rep(l._1),rep(r))))))
 //    require(lN.forall(l => l._2.forall(r => lookup.isDefinedAt((rep(r),rep(l._1))))))
 //    println("union of : " + (s,t))
-    val c0 = this.updateGraph(g.lazyAddEdge(s, t, None))
-//    val c0 = this
+//    val c0 = this.updateGraph(g.lazyAddEdge(s, t, None))
+    val c0 = this
     val lookupNow = lookup
     val (u,v) = if (cclass(rep(s)).size > cclass(rep(t)).size) (s,t) else (t,s)
     val (ru,rv) = (rep(u),rep(v))

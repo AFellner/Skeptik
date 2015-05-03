@@ -82,17 +82,25 @@ abstract class CongruenceCompressor extends (Proof[N] => Proof[N]) with fixNodes
             con2.explain(eq.l,eq.r) match {
               case Some(path) => {
 //                 println("FOUND GOOD PATH: " + path)
-//                val p = try {
-                  val p = path.toProof 
-//                }
-//                catch {
-//                  case (e: Exception) => {
-//                    
-//                    println("congruent?: " + con.isCongruent(eq.l, eq.r))
+                val p = try {
+                   path.toProof 
+                }
+                catch {
+                  case (e: Exception) => {
+//                    (eq.l,eq.r) match {
+//                      case (App(App(_,l1),r1),App(App(_,l2),r2)) => {
+//                        println(l1 + " congruent to " + l2 + "?: " + con.isCongruent(l1, l2))
+//                        println(r1 + " congruent to " + r2 + "?: " + con.isCongruent(r1, r2))
+//                      }
+//                    }
+                    println(eq.l + " and " + eq.r + " congruent?: " + con.isCongruent(eq.l, eq.r))
+                    println(path.toString(true))
 //                    println(con2.g)
-//                    throw(e)
-//                  }
-//                }
+                    val exp = new at.logic.skeptik.exporter.smt.FileExporter("bugExport3",true)
+                    exp.write(Proof(node))
+                    throw(e)
+                  }
+                }
                 p match {
                   case Some(proof) => {
 //                    val newSize = proof.root.conclusion.ant.size
